@@ -1,9 +1,10 @@
 import express from "express";
-import { createInvoice } from "../controllers/invoice.controller.js";
+import { createInvoice, getInvoices } from "../controllers/invoiceController";
+import { authMiddelware } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-// POST /api/invoices - create a new invoice
-router.post("/invoice", createInvoice);
+router.post("/invoice", authMiddelware, createInvoice);
+router.get("/getInvoices", authMiddelware, getInvoices);
 
 export default router;
