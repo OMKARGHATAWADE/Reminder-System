@@ -31,10 +31,14 @@ export const createSMTPConfig = async (req, res) => {
       password: hashPassword,
     });
 
-    res.status(201).json({ message: "SMTP configuration created successfully." });
     await newSMTPConfig.save();
+    res
+      .status(201)
+      .json({ message: "SMTP configuration created successfully." });
   } catch (error) {
     console.error("Error creating SMTP config:", error);
-    res.status(500).json({ message: "Server error while creating SMTP config." });
+    res
+      .status(500)
+      .json({ message: "Server error while creating SMTP config." });
   }
 };
