@@ -27,9 +27,40 @@ export const sendReminder = async (req, res) => {
     await sendEmail({
       smtpConfig,
       to: invoice.clientEmail,
-      subject: `Reminder: Invoice #${invoice.invoiceNumber}`,
-      text: `Hi ${invoice.clientName},\n\nThis is reminder for your invoice #${invoice.invoiceNumber} of amount $${invoice.amount} for the service: ${invoice.service}.`,
-      html: `<p>Hi <strong>${invoice.clientName}</strong>,</p><p>This is a reminder for your <strong>invoice #${invoice.invoiceNumber}</strong> of amount <strong>$${invoice.amount}</strong> for the service: <em>${invoice.service}</em>.</p>`,
+      subject: `Payment Reminder - RoamRanger Pvt Ltd | Invoice #${invoice.invoiceNumber}`,
+      text: `Dear ${invoice.clientName},
+
+We hope you're doing well.
+
+This is a gentle reminder from RoamRanger Pvt Ltd regarding your pending invoice #${invoice.invoiceNumber}.
+
+Amount Due: $${invoice.amount}
+Service: ${invoice.service}
+
+We kindly request you to complete the payment at your earliest convenience. If you’ve already made the payment, please disregard this message.
+
+Thank you for choosing RoamRanger.
+
+Best regards,
+RoamRanger Pvt Ltd
+`,
+      html: `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2 style="color: #007BFF;">RoamRanger Pvt Ltd</h2>
+      <p>Dear <strong>${invoice.clientName}</strong>,</p>
+      <p>This is a friendly reminder regarding your pending invoice.</p>
+      <ul>
+        <li><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</li>
+        <li><strong>Amount:</strong> $${invoice.amount}</li>
+        <li><strong>Service:</strong> ${invoice.service}</li>
+      </ul>
+      <p>Please make the payment at your earliest convenience.</p>
+      <p>If you've already paid, kindly ignore this message.</p>
+      <br>
+      <p>Thank you for your business,</p>
+      <p><strong>Team RoamRanger Pvt Ltd</strong></p>
+    </div>
+  `,
     });
     res.status(200).json({ message: "Reminder email sent successfully." });
   } catch (error) {

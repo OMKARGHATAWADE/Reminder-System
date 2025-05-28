@@ -18,7 +18,7 @@ const smtpConfigSchema = new mongoose.Schema(
     },
     secure: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     email: {
       type: String,

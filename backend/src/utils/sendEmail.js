@@ -1,19 +1,18 @@
 import nodemailer from "nodemailer";
-import SMTPConfig from "../models/smtpConfigModel";
-export const sendEmail = async ({ SMTPConfig, to, subject, text, html }) => {
+export const sendEmail = async ({smtpConfig, to, subject, text, html }) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: SMTPConfig.host,
-      port: SMTPConfig.port,
-      secure: SMTPConfig.secure,
+      host: smtpConfig.host,
+      port: smtpConfig.port,
+      secure: smtpConfig.secure,
       auth: {
-        user: SMTPConfig.email,
-        pass: SMTPConfig.password,
+        user: smtpConfig.email,
+        pass: smtpConfig.password,
       },
     });
 
     const mailOptions = {
-      from: SMTPConfig.email,
+      from: smtpConfig.email,
       to,
       subject,
       text,

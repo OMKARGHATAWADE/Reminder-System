@@ -6,7 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import cookieParser from "cookie-parser";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
 import emailRoute from ".//routes/emailRoute.js";
-
+import smtpRoute from "./routes/smtpRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -20,6 +20,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reminder/", emailRoute);
+app.use("/api/smtp", smtpRoute);
 
 // Start Server
 connectDB().then(() => {

@@ -1,4 +1,4 @@
-import SMTPConfig from "../models/smtpConfigModel";
+import SMTPConfig from "../models/smtpConfigModel.js";
 import bcrypt from "bcrypt";
 
 export const createSMTPConfig = async (req, res) => {
@@ -6,7 +6,7 @@ export const createSMTPConfig = async (req, res) => {
     const userId = req.user._id;
 
     const { host, port, secure, email, password } = req.body;
-    if (host || port || secure === undefined || email || password) {
+    if (!host || !port || !secure === undefined || !email || !password) {
       return res.status(400).json({
         message: "All fields are required for creation of SMTP Configuration.",
       });
@@ -20,15 +20,13 @@ export const createSMTPConfig = async (req, res) => {
       });
     }
 
-    const hashPassword = await bcrypt.hash(password, 10);
-
     const newSMTPConfig = new SMTPConfig({
       user: userId,
       host,
       port,
       secure,
       email,
-      password: hashPassword,
+      password,
     });
 
     await newSMTPConfig.save();
