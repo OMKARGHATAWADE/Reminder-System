@@ -34,6 +34,11 @@ const invoiceSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Plan",
+      default: null,
+    },
   },
   {
     timestamps: true,
