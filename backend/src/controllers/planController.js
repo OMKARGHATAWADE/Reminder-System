@@ -30,7 +30,7 @@ export const assignPlanToInvoice = async (req, res) => {
   try {
     const { invoiceId } = req.params;
     const { planId } = req.body;
-    const { userId } = req.user._id;
+    const userId = req.user._id;
 
     const invoice = await Invoice.findOne({
       _id: invoiceId,

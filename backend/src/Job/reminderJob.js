@@ -1,50 +1,59 @@
-import cron from 'node-cron';
-import Invoice from './models/Invoice.js';
-import ReminderHistory from './models/ReminderHistory.js';
-import sendEmail from './utils/sendEmail.js';
+import cron from "node-cron";
+import Invoice from "../models/invoiceModel.js";
+import ReminderHistory from "../models/reminderHistoryModel.js";
+import sendEmail from "../utils/sendEmail.js";
 
-// 💡 Main logic to send reminders
-const sendAutomatedReminders = async () => {
-  const invoices = await Invoice.find({ planId: { $ne: null } }).populate('planId userId');
+export const sendAutomatedReminders = async () => {
+  try {
+    const invoices = await Invoice.find({ planId: { $ne: null } })
+      .populate({ path: "planId", select: "days" })
+      .populate({ path: "userId", select: "smtpConfig" });
 
-  for (const invoice of invoices) {
-    const invoiceAge = Math.floor((Date.now() - new Date(invoice.createdAt)) / (1000 * 60 * 60 * 24));
-    const plan = invoice.planId;
+    for (const invoice of invoices) {
+      const plan = invoice.planId;
+      const user = invoice.userId;
 
-    if (!plan?.days.includes(invoiceAge)) continue;
+      if (!plan || !plan.days) continue;
+      if (!user || !user.smtpConfig) continue;
 
-    const alreadySent = await ReminderHistory.findOne({
-      invoiceId: invoice._id,
-      reminderDay: invoiceAge,
-    });
+      const invoiceAge = Math.floor(
+        (Date.now() - new Date(invoice.createdAt)) / (1000 * 60 * 60 * 24)
+      );
 
-    if (alreadySent) continue;
+      if (!plan.days.includes(invoiceAge)) continue;
 
-    const smtpConfig = invoice.userId.smtpConfig;
-    if (!smtpConfig) continue;
-
-    try {
-      await sendEmail({
-        to: invoice.clientEmail,
-        subject: `Reminder for Invoice #${invoice._id}`,
-        text: `Hello, this is a reminder for your invoice.`,
-        smtpConfig,
-      });
-
-      await ReminderHistory.create({
+      const alreadySent = await ReminderHistory.findOne({
         invoiceId: invoice._id,
         reminderDay: invoiceAge,
       });
+      if (alreadySent) continue;
 
-      console.log(`✅ Sent reminder for invoice ${invoice._id} (day ${invoiceAge})`);
-    } catch (err) {
-      console.error(`❌ Email failed for invoice ${invoice._id}:`, err.message);
+      try {
+        await sendEmail({
+          to: invoice.clientEmail,
+          subject: `Reminder for Invoice #${invoice._id}`,
+          text: `Hello, this is a reminder for your invoice created on ${invoice.createdAt.toDateString()}. Please check your account for details.`,
+          smtpConfig: user.smtpConfig,
+        });
+
+        await ReminderHistory.create({
+          invoiceId: invoice._id,
+          reminderDay: invoiceAge,
+        });
+
+        console.log(
+          `Sent reminder for invoice ${invoice._id} (day ${invoiceAge})`
+        );
+      } catch (err) {
+        console.error(` Email failed for invoice ${invoice._id}:`, err.message);
+      }
     }
+  } catch (err) {
+    console.error(" Error in sendAutomatedReminders:", err);
   }
 };
 
-// ⏰ Run daily at 9 AM
-cron.schedule('0 9 * * *', () => {
-  console.log('🔔 Running reminder job at 9 AM...');
+cron.schedule("0 9 * * *", () => {
+  console.log(" Running reminder job at 9 AM...");
   sendAutomatedReminders();
 });
