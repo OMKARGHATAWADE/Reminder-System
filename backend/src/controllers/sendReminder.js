@@ -1,6 +1,6 @@
 import Invoice from "../models/invoiceModel.js";
 import SMTPConfig from "../models/smtpConfigModel.js";
-import { sendEmail } from "../utils/sendEmail.js";
+import {sendEmail}  from "../utils/sendEmail.js";
 
 export const sendReminder = async (req, res) => {
   try {

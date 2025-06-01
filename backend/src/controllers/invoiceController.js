@@ -20,7 +20,7 @@ export const createInvoice = async (req, res) => {
       !amount
     ) {
       return res.status(400).json({
-        message: "All fiels are required to create Invoice.",
+        message: "All fields are required to create Invoice.",
       });
     }
 
@@ -43,7 +43,7 @@ export const createInvoice = async (req, res) => {
 
     await newInvoice.save();
 
-    res.status(200).json({
+    res.status(201).json({
       message: "Invoice created Successfully.",
       invoice: newInvoice,
     });

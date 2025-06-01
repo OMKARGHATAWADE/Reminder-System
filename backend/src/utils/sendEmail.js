@@ -27,7 +27,7 @@ export const sendEmail = async ({smtpConfig, to, subject, text, html }) => {
       message: info.messageId,
     };
   } catch (error) {
-    console.error("Error sending email:", error);
-    return { success: false, error };
+    console.error("Error sending email:", error.response || error.message);
+     return { success: false, error: error.message };
   }
 };

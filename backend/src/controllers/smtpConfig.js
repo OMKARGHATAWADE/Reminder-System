@@ -6,7 +6,7 @@ export const createSMTPConfig = async (req, res) => {
     const userId = req.user._id;
 
     const { host, port, secure, email, password } = req.body;
-    if (!host || !port || !secure === undefined || !email || !password) {
+    if (!host || !port || secure === undefined || !email || !password) {
       return res.status(400).json({
         message: "All fields are required for creation of SMTP Configuration.",
       });

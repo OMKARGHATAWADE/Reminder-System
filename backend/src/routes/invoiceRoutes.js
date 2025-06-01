@@ -8,7 +8,7 @@ import { assignPlanToInvoice } from "../controllers/planController.js";
 
 const router = express.Router();
 
-router.post("/invoices", authMiddelware, createInvoice);
+router.post("/invoice", authMiddelware, createInvoice);
 router.get("/getInvoices", authMiddelware, getInvoices);
 router.patch("/:invoiceId/assign-plan", authMiddelware, assignPlanToInvoice);
 
