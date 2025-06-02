@@ -46,3 +46,37 @@ export const getClientDetailsByInvoiceNumber = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+
+export const getInvoicesByClientEmail = async (req, res) => {
+  try {
+    const clientEmail = req.params.clientEmail;
+
+    if (!clientEmail) {
+      return res.status(400).json({ error: "clientEmail param is required" });
+    }
+
+    // Get all invoices for this clientEmail
+    const invoices = await Invoice.find({ clientEmail })
+      .populate({ path: "planId", select: "name days" })
+      .lean();
+
+    // Attach reminder history to each invoice
+    for (let invoice of invoices) {
+      const history = await ReminderHistory.find({
+        invoiceId: invoice._id,
+      }).select("reminderDay createdAt");
+
+      invoice.reminderHistory = history.map((r) => ({
+        _id: r._id,
+        reminderDay: r.reminderDay,
+        sentAt: r.createdAt,
+      }));
+    }
+
+    res.json({ clientEmail, invoices });
+  } catch (err) {
+    console.error("Error in getInvoicesByClientEmail:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};

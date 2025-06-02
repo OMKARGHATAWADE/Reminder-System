@@ -3,6 +3,7 @@ import Invoice from "../models/invoiceModel.js";
 import ReminderHistory from "../models/reminderHistory.js";
 import SMTPConfig from "../models/smtpConfigModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { generateInvoicePdf } from "../utils/generateInvoicePdf.js"; // <-- You must create this
 
 // Utility to calculate date difference in full calendar days
 const getDaysBetween = (from, to) => {
@@ -13,6 +14,38 @@ const getDaysBetween = (from, to) => {
   toDate.setHours(0, 0, 0, 0);
 
   return Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24));
+};
+
+// Helper to generate polite, professional email text with gentle final reminder
+const getEmailText = (invoice, reminderDay, planDays) => {
+  const lastDay = Math.max(...planDays);
+
+  const invoiceDetails =
+`Invoice Number: ${invoice.invoiceNumber}  
+Amount Due: ₹${invoice.amount}  
+Service: ${invoice.service}  
+Invoice Date: ${new Date(invoice.createdAt).toDateString()}\n\n`;
+
+  if (reminderDay === lastDay) {
+    // Polite final reminder
+    return `Dear ${invoice.clientName || "Customer"},\n\n` +
+      `We hope this message finds you well.\n\n` +
+      `This is a kind final reminder regarding your outstanding payment for the invoice detailed below:\n\n` +
+      invoiceDetails +
+      `We kindly request that you process the payment at your earliest convenience to avoid any unintended disruptions.\n\n` +
+      `If you have already completed the payment, please disregard this message.\n\n` +
+      `Thank you for your attention to this matter.\n\n` +
+      `Warm regards,\n${invoice.businessName || "Your Company"}\n${invoice.businessEmail}`;
+  } else {
+    // Regular polite reminder
+    return `Dear ${invoice.clientName || "Customer"},\n\n` +
+      `We hope this message finds you well.\n\n` +
+      `This is a friendly reminder that your payment for the following invoice is pending:\n\n` +
+      invoiceDetails +
+      `Please make the payment at your earliest convenience.\n\n` +
+      `If you’ve already completed the payment, please disregard this message.\n\n` +
+      `Warm regards,\n${invoice.businessName || "Your Company"}\n${invoice.businessEmail}`;
+  }
 };
 
 export const sendAutomatedReminders = async () => {
@@ -64,11 +97,24 @@ export const sendAutomatedReminders = async () => {
       }
 
       try {
+        // Generate PDF and get buffer
+        const pdfBuffer = await generateInvoicePdf(invoice);
+
+        // Compose polite professional message with final reminder logic
+        const emailText = getEmailText(invoice, invoiceAge, plan.days);
+
         const result = await sendEmail({
           to: invoice.clientEmail,
-          subject: `Reminder for Invoice #${invoice.invoiceNumber || invoice._id}`,
-          text: `Hello, this is a reminder for your invoice created on ${invoice.createdAt.toDateString()}. Please check your account for details.`,
+          subject: `Payment Reminder: Invoice #${invoice.invoiceNumber}`,
+          text: emailText,
           smtpConfig,
+          attachments: [
+            {
+              filename: `Invoice-${invoice.invoiceNumber}.pdf`,
+              content: pdfBuffer,
+              contentType: "application/pdf"
+            }
+          ]
         });
 
         if (result.success) {
@@ -89,7 +135,7 @@ export const sendAutomatedReminders = async () => {
   }
 };
 
-// Cron job every minute (for testing)
+// Cron job (9:30 AM every day)
 cron.schedule("30 9 * * *", () => {
   console.log("🔁 Running reminder job...");
   sendAutomatedReminders();

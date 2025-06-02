@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
-export const sendEmail = async ({smtpConfig, to, subject, text, html }) => {
+
+export const sendEmail = async ({ smtpConfig, to, subject, text, html, attachments }) => {
   try {
     const transporter = nodemailer.createTransport({
       host: smtpConfig.host,
@@ -17,6 +18,7 @@ export const sendEmail = async ({smtpConfig, to, subject, text, html }) => {
       subject,
       text,
       html,
+      attachments: attachments || [], // support attachments, default empty array
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -28,6 +30,6 @@ export const sendEmail = async ({smtpConfig, to, subject, text, html }) => {
     };
   } catch (error) {
     console.error("Error sending email:", error.response || error.message);
-     return { success: false, error: error.message };
+    return { success: false, error: error.message };
   }
 };
