@@ -1,6 +1,8 @@
 import User from '../models/userModel.js';
 import bcrypt from "bcrypt";
 import { generateToken } from '../utils/generateToken.js';
+import jwt from "jsonwebtoken";
+
 
 export const registerUser = async (req, res) => {
   try {
@@ -84,7 +86,30 @@ export const logoutUser = (req, res) => {
     httpOnly: true,
     expires: new Date(0),
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
   return res.status(200).json({ message: "Logged out successfully" });
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ loggedIn: false });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(401).json({ loggedIn: false });
+
+    res.status(200).json({
+      loggedIn: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error("Auth check failed:", err);
+    res.status(401).json({ loggedIn: false });
+  }
 };

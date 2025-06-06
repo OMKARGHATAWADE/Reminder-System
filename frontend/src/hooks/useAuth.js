@@ -8,9 +8,8 @@ export function useAuth() {
     async function checkAuth() {
       try {
         const res = await fetch("/api/auth/check", {
-          credentials: "include", // send cookies
+          credentials: "include",
         });
-
         if (res.ok) setLoggedIn(true);
         else setLoggedIn(false);
       } catch {

@@ -1,6 +1,5 @@
-// src/pages/LoginPage.jsx
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 
@@ -62,6 +61,16 @@ export default function LoginPage() {
         >
           Login
         </button>
+
+        <p className="mt-4 text-center text-gray-600">
+          Don't have an account?{" "}
+          <Link
+            to="/signup"
+            className="text-blue-600 hover:underline font-semibold"
+          >
+            Sign up
+          </Link>
+        </p>
       </form>
     </div>
   );

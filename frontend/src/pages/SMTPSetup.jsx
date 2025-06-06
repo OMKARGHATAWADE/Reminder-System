@@ -1,5 +1,5 @@
-// src/pages/SMTPSetup.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";  // <-- Import useNavigate
 
 export default function SMTPSetup() {
   const [form, setForm] = useState({
@@ -12,6 +12,24 @@ export default function SMTPSetup() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: string }
+  const [isLoggedIn, setIsLoggedIn] = useState(null); // null = loading, true/false = known
+
+  const navigate = useNavigate();  // <-- Initialize navigate
+
+  // Check login status on mount
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/check", {
+          credentials: "include", // send cookies automatically
+        });
+        setIsLoggedIn(res.ok);
+      } catch (err) {
+        setIsLoggedIn(false);
+      }
+    }
+    checkAuth();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,10 +38,6 @@ export default function SMTPSetup() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-
-  // Optional: A simple helper to check if user is logged in based on cookie presence
-  // (You may replace this with a proper auth context/state in your app)
-  const isLoggedIn = document.cookie.includes("token=");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,13 +50,7 @@ export default function SMTPSetup() {
       return;
     }
 
-    // Basic front-end validation
-    if (
-      !form.host.trim() ||
-      !form.port ||
-      !form.email.trim() ||
-      !form.password.trim()
-    ) {
+    if (!form.host.trim() || !form.port || !form.email.trim() || !form.password.trim()) {
       setMessage({ type: "error", text: "Please fill in all required fields." });
       setLoading(false);
       return;
@@ -51,10 +59,8 @@ export default function SMTPSetup() {
     try {
       const response = await fetch("/api/smtp/smtpSetup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",  // This sends cookies automatically
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           host: form.host.trim(),
           port: Number(form.port),
@@ -64,25 +70,63 @@ export default function SMTPSetup() {
         }),
       });
 
-      const data = await response.json();
+      let data = null;
+      let text = null;
+
+      try {
+        text = await response.text();
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        console.error("Response is not valid JSON:", text, jsonErr);
+      }
+
+      console.log("Response status:", response.status);
+      console.log("Response body:", text);
 
       if (response.ok) {
-        setMessage({ type: "success", text: data.message || "SMTP configuration saved." });
+        setMessage({ type: "success", text: data?.message || "SMTP configuration saved successfully." });
+
+        // Redirect to home page after a short delay (1.5 seconds)
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
       } else {
-        setMessage({ type: "error", text: data.message || "Failed to save SMTP config." });
+        setMessage({
+          type: "error",
+          text: data?.message || `Failed to save SMTP config. Status: ${response.status}`,
+        });
+        console.error("SMTP Setup error:", data?.message || `Status ${response.status}`);
       }
     } catch (err) {
       setMessage({ type: "error", text: "Network error. Please try again." });
+      console.error("Network error during SMTP setup:", err);
     }
+
     setLoading(false);
   };
+
+  if (isLoggedIn === null) {
+    return (
+      <div className="max-w-lg mx-auto p-6 mt-10 bg-white rounded-xl shadow-md text-center">
+        Checking login status...
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="max-w-lg mx-auto p-6 mt-10 bg-white rounded-xl shadow-md text-center text-red-600">
+        You must be logged in to access SMTP Setup.
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto p-6 mt-10 bg-white rounded-xl shadow-md">
       <h1 className="text-2xl font-semibold mb-6 text-center">SMTP Setup</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Host */}
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
           <label htmlFor="host" className="block mb-1 font-medium text-gray-700">
             SMTP Host <span className="text-red-500">*</span>
@@ -99,7 +143,6 @@ export default function SMTPSetup() {
           />
         </div>
 
-        {/* Port */}
         <div>
           <label htmlFor="port" className="block mb-1 font-medium text-gray-700">
             SMTP Port <span className="text-red-500">*</span>
@@ -118,7 +161,6 @@ export default function SMTPSetup() {
           />
         </div>
 
-        {/* Secure checkbox */}
         <div className="flex items-center space-x-2">
           <input
             type="checkbox"
@@ -133,7 +175,6 @@ export default function SMTPSetup() {
           </label>
         </div>
 
-        {/* Email */}
         <div>
           <label htmlFor="email" className="block mb-1 font-medium text-gray-700">
             Email Address <span className="text-red-500">*</span>
@@ -150,7 +191,6 @@ export default function SMTPSetup() {
           />
         </div>
 
-        {/* Password */}
         <div>
           <label htmlFor="password" className="block mb-1 font-medium text-gray-700">
             Password / App Password <span className="text-red-500">*</span>
@@ -164,10 +204,10 @@ export default function SMTPSetup() {
             placeholder="••••••••"
             required
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            autoComplete="current-password"
           />
         </div>
 
-        {/* Message */}
         {message && (
           <p
             className={`text-center mt-2 font-semibold ${
@@ -179,7 +219,6 @@ export default function SMTPSetup() {
           </p>
         )}
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={loading}

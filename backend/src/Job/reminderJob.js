@@ -136,7 +136,7 @@ export const sendAutomatedReminders = async () => {
 };
 
 // Cron job (9:30 AM every day)
-cron.schedule("0 9 * * *", () => {
+cron.schedule("* * * * *", () => {
   console.log("🔁 Running reminder job at 9AM IST...");
   sendAutomatedReminders();
 }, {
